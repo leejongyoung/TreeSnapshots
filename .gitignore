@@ -1,0 +1,80 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.apdisk
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+Icon?
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+*.stackdump
+[Ll]ogs/
+[Tt]emp/
+[Tt]emporary/
+
+# Linux
+*~
+# temporary files created by editors like Vim
+*.swp
+*.swo
+# Package manager files
+*.deb
+*.rpm
+*.tgz
+*.tar.gz
+*.zip
+
+# Common / Cross-Platform
+# Logs and temporary files
+*.log
+*.tmp
+*.bak
+*.orig
+*.rej
+
+# IDE and editor specific files (add as needed)
+.idea/
+.vscode/
+.project
+.classpath
+.settings/
+*.sublime-project
+*.sublime-workspace
+
+# Build artifacts (example, adjust for your project)
+build/
+dist/
+bin/
+obj/
+*.o
+*.pyc
+__pycache__/
+node_modules/
+
+# dotenv files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Miscellaneous
+.DS_Store?
+
+# Project-specific ignores
+snapshots/*.txt
