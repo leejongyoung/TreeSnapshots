@@ -19,6 +19,10 @@ SNAPSHOT_DIR="${REPO_ROOT}/snapshots"
 DATE=$(date +%Y%m%d)
 START_TIME=$SECONDS
 OS_TYPE=$(uname)
+# Refine OS_TYPE for WSL
+if [[ "$OS_TYPE" == "Linux" ]] && grep -qE "(Microsoft|WSL)" /proc/version &> /dev/null; then
+    OS_TYPE="WSL"
+fi
 REAL_USER=${SUDO_USER:-$USER}
 
 # 2. Dependency Check
@@ -38,6 +42,7 @@ check_and_install_tree() {
     fi
 
     echo "🔧 Installing 'tree'..."
+    # On WSL, brew is not available, and it will fall through to the Linux part, which is correct.
     if [[ "$OS_TYPE" == "Darwin" ]]; then
         if command -v brew &> /dev/null; then
             # Brew install does not need sudo
@@ -46,8 +51,8 @@ check_and_install_tree() {
             echo "❌ ERROR: Homebrew (brew) not found. Please install Homebrew or 'tree' manually."
             exit 1
         fi
-    elif [[ "$OS_TYPE" == "Linux" ]]; then
-        # Package managers need sudo
+    elif [[ "$OS_TYPE" == "Linux" || "$OS_TYPE" == "WSL" ]]; then
+        # Package managers need to be run as root (which the script is)
         if command -v apt-get &> /dev/null; then
             apt-get update && apt-get install -y tree
         elif command -v dnf &> /dev/null; then
@@ -77,12 +82,11 @@ check_and_install_tree
 # 4. Function to get available drives
 get_drives() {
     local drive_list=()
-    # Always add the root directory as the first "Local Device" option
+    # Always add the root of the current filesystem as the first option
     drive_list+=("/")
 
-    local drives_output
     if [[ "$OS_TYPE" == "Darwin" ]]; then
-        # On macOS, find the volume name for the root directory to exclude it
+        # On macOS, find and exclude the root volume from the /Volumes list
         local root_vol_name=""
         for vol in "/Volumes/"*; do
             if [[ -L "$vol" && "$(readlink "$vol")" == "/" ]]; then
@@ -90,31 +94,27 @@ get_drives() {
                 break
             fi
         done
-        
-        # List all volumes and filter out the root volume name
-        local all_volumes
-        all_volumes=$(ls -1 /Volumes)
-        
-        local temp_drives=()
+        local all_volumes=$(ls -1 /Volumes)
         while IFS= read -r line; do
-            [[ -n "$line" && "$line" != "$root_vol_name" ]] && temp_drives+=("$line")
+            [[ -n "$line" && "$line" != "$root_vol_name" ]] && drive_list+=("/Volumes/$line")
         done <<< "$all_volumes"
-        
-        # Join the arrays (bash 3 compatible way)
-        drive_list=("${drive_list[@]}" "${temp_drives[@]}")
 
+    elif [[ "$OS_TYPE" == "WSL" ]]; then
+        # On WSL, add the mounted Windows drives (e.g., /mnt/c, /mnt/d)
+        local wsl_drives=$(ls -1 /mnt/ | grep -E '^[a-z]$')
+        while IFS= read -r letter; do
+            [[ -n "$letter" ]] && drive_list+=("/mnt/$letter")
+        done <<< "$wsl_drives"
+    
     elif [[ "$OS_TYPE" == "Linux" ]]; then
-        # On Linux, use lsblk to find mount points, excluding some common/system ones.
-        drives_output=$(lsblk -o MOUNTPOINT -n | grep -vE "^(/boot|/snap|/var|/swap|/)$")
-        while IFS= read -r line; do
-            [[ -n "$line" ]] && drive_list+=("$line")
-        done <<< "$drives_output"
-    else
-        echo "❌ Unsupported Operating System: $OS_TYPE"
-        exit 1
+        # On native Linux, use lsblk to find other mount points
+        local linux_drives=$(lsblk -o MOUNTPOINT -n | grep -vE "^(/boot|/snap|/var|/swap|/)$")
+        while IFS= read -r mount_point; do
+            [[ -n "$mount_point" ]] && drive_list+=("$mount_point")
+        done <<< "$linux_drives"
     fi
     
-    # Return the array
+    # Return the array as a single string
     echo "${drive_list[@]}"
 }
 
@@ -128,13 +128,16 @@ if [ ${#options[@]} -eq 0 ]; then
     exit 1
 fi
 
-# Custom menu imitating `select` but with more descriptive text
+# Custom menu with more descriptive text
 while true; do
     i=1
     for opt in "${options[@]}"; do
         if [[ "$opt" == "/" ]]; then
-            echo "   $i) Local Device (/)"
-        else
+            echo "   $i) Linux Filesystem (/)"
+        elif [[ "$opt" =~ ^/mnt/[a-z]$ ]]; then # WSL drive
+            DRIVE_LETTER=$(basename "$opt" | tr 'a-z' 'A-Z')
+            echo "   $i) Windows Drive ($DRIVE_LETTER:)"
+        else # macOS external or other Linux mount
             DRIVE_LABEL=$(basename "$opt")
             echo "   $i) External Drive ($DRIVE_LABEL)"
         fi
@@ -149,18 +152,15 @@ while true; do
     fi
 
     if [[ "$REPLY" =~ ^[0-9]+$ ]] && [ "$REPLY" -ge 1 ] && [ "$REPLY" -le ${#options[@]} ]; then
-        DRIVE_IDENTIFIER=${options[$REPLY-1]}
+        TARGET_PATH=${options[$REPLY-1]}
         
-        if [[ "$DRIVE_IDENTIFIER" == "/" ]]; then
-            DRIVE_NAME="Local_Device"
-            TARGET_PATH="/"
-        elif [[ "$OS_TYPE" == "Darwin" ]]; then
-            DRIVE_NAME="${DRIVE_IDENTIFIER}"
-            TARGET_PATH="/Volumes/${DRIVE_IDENTIFIER}"
-        else # Linux
-            DRIVE_NAME=$(basename "$DRIVE_IDENTIFIER")
-            [[ -z "$DRIVE_NAME" ]] && DRIVE_NAME="root" # Fallback
-            TARGET_PATH="${DRIVE_IDENTIFIER}"
+        # Determine a clean name for the output file
+        if [[ "$TARGET_PATH" == "/" ]]; then
+            DRIVE_NAME="Linux_Root"
+        elif [[ "$TARGET_PATH" =~ ^/mnt/[a-z]$ ]]; then
+            DRIVE_NAME="Windows_$(basename "$TARGET_PATH" | tr 'a-z' 'A-Z')"
+        else
+            DRIVE_NAME=$(basename "$TARGET_PATH")
         fi
 
         OUTPUT_FILE="${SNAPSHOT_DIR}/snapshot_${DATE}_${DRIVE_NAME// /_}.txt"
