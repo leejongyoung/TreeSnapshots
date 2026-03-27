@@ -34,8 +34,12 @@ check_and_install_tree() {
 
     echo "⚠️ 'tree' command not found. Attempting to install..."
 
-    # Check for internet connectivity
-    if ! ping -c 1 8.8.8.8 &> /dev/null; then
+    # Check for internet connectivity.
+    # curl and nc are preferred over ping because ICMP is often blocked in
+    # WSL, containers, and corporate firewalls. Ping is kept as a last resort.
+    if ! { curl -s --connect-timeout 3 -o /dev/null http://connectivitycheck.gstatic.com/generate_204 2>/dev/null || \
+           nc -zw3 8.8.8.8 53 2>/dev/null || \
+           ping -c 1 8.8.8.8 &>/dev/null; }; then
         echo "❌ ERROR: Internet connection not available."
         echo "Please install 'tree' manually and run the script again."
         exit 1
@@ -79,11 +83,13 @@ mkdir -p "$SNAPSHOT_DIR" # Create directory (as root)
 chown "$REAL_USER" "$SNAPSHOT_DIR" # Change ownership to the real user
 check_and_install_tree
 
-# 4. Function to get available drives
-get_drives() {
-    local drive_list=()
+# 4. Function to populate available drives into the global options array
+# Using a global array avoids word-splitting on paths that contain spaces
+# (e.g. macOS volumes like "/Volumes/My Passport").
+populate_drives() {
+    options=()
     # Always add the root of the current filesystem as the first option
-    drive_list+=("/")
+    options+=("/")
 
     if [[ "$OS_TYPE" == "Darwin" ]]; then
         # On macOS, find and exclude the root volume from the /Volumes list
@@ -94,34 +100,34 @@ get_drives() {
                 break
             fi
         done
-        local all_volumes=$(ls -1 /Volumes)
+        local all_volumes
+        all_volumes=$(ls -1 /Volumes)
         while IFS= read -r line; do
-            [[ -n "$line" && "$line" != "$root_vol_name" ]] && drive_list+=("/Volumes/$line")
+            [[ -n "$line" && "$line" != "$root_vol_name" ]] && options+=("/Volumes/$line")
         done <<< "$all_volumes"
 
     elif [[ "$OS_TYPE" == "WSL" ]]; then
         # On WSL, add the mounted Windows drives (e.g., /mnt/c, /mnt/d)
-        local wsl_drives=$(ls -1 /mnt/ | grep -E '^[a-z]$')
+        local wsl_drives
+        wsl_drives=$(ls -1 /mnt/ | grep -E '^[a-z]$')
         while IFS= read -r letter; do
-            [[ -n "$letter" ]] && drive_list+=("/mnt/$letter")
+            [[ -n "$letter" ]] && options+=("/mnt/$letter")
         done <<< "$wsl_drives"
-    
+
     elif [[ "$OS_TYPE" == "Linux" ]]; then
         # On native Linux, use lsblk to find other mount points
-        local linux_drives=$(lsblk -o MOUNTPOINT -n | grep -vE "^(/boot|/snap|/var|/swap|/)$")
+        local linux_drives
+        linux_drives=$(lsblk -o MOUNTPOINT -n | tr -d ' ' | grep -vE "^(/boot|/snap|/var|/swap|/)$|^$")
         while IFS= read -r mount_point; do
-            [[ -n "$mount_point" ]] && drive_list+=("$mount_point")
+            [[ -n "$mount_point" ]] && options+=("$mount_point")
         done <<< "$linux_drives"
     fi
-    
-    # Return the array as a single string
-    echo "${drive_list[@]}"
 }
 
 # 5. Drive Selection Menu
 echo "------------------------------------------------"
 echo "📂 Select a drive or mount point to scan:"
-options=($(get_drives))
+populate_drives
 
 if [ ${#options[@]} -eq 0 ]; then
     echo "⚠️ No drives found. Please check your system."
@@ -133,7 +139,7 @@ while true; do
     i=1
     for opt in "${options[@]}"; do
         if [[ "$opt" == "/" ]]; then
-            echo "   $i) Linux Filesystem (/)"
+            echo "   $i) Root Filesystem (/)"
         elif [[ "$opt" =~ ^/mnt/[a-z]$ ]]; then # WSL drive
             DRIVE_LETTER=$(basename "$opt" | tr 'a-z' 'A-Z')
             echo "   $i) Windows Drive ($DRIVE_LETTER:)"
@@ -156,7 +162,11 @@ while true; do
         
         # Determine a clean name for the output file
         if [[ "$TARGET_PATH" == "/" ]]; then
-            DRIVE_NAME="Linux_Root"
+            if [[ "$OS_TYPE" == "Darwin" ]]; then
+                DRIVE_NAME="macOS_Root"
+            else
+                DRIVE_NAME="Linux_Root"
+            fi
         elif [[ "$TARGET_PATH" =~ ^/mnt/[a-z]$ ]]; then
             DRIVE_NAME="Windows_$(basename "$TARGET_PATH" | tr 'a-z' 'A-Z')"
         else
@@ -174,9 +184,13 @@ echo -e "\n🔍 Starting scan on: $TARGET_PATH"
 echo "------------------------------------------------"
 
 # 6. Run tree command in the background
-# Using stdbuf to ensure line-by-line output for monitoring.
+# stdbuf ensures line-by-line output for monitoring (Linux/WSL only; not available on macOS).
 # The --du option is excluded for performance, but can be added if needed.
-stdbuf -oL tree -apu -h "$TARGET_PATH" > "$OUTPUT_FILE" &
+if command -v stdbuf &> /dev/null; then
+    stdbuf -oL tree -apu -h "$TARGET_PATH" > "$OUTPUT_FILE" &
+else
+    tree -apu -h "$TARGET_PATH" > "$OUTPUT_FILE" &
+fi
 TREE_PID=$!
 
 # 7. Monitoring loop (checks line count and file size)
