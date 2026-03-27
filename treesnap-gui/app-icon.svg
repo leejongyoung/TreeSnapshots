@@ -1,0 +1,18 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="1024" height="1024" fill="#0f172a"/>
+
+  <!-- Tree scaled and centered (original viewBox 0 0 52 66, scale ~10x) -->
+  <g transform="translate(250, 162) scale(10.08)">
+    <!-- Trunk -->
+    <rect x="21" y="52" width="10" height="13" rx="2" fill="#334155"/>
+    <!-- Bottom layer -->
+    <polygon points="26,18 1,56 51,56" fill="#065f46"/>
+    <!-- Middle layer -->
+    <polygon points="26,9 5,44 47,44" fill="#047857"/>
+    <!-- Top layer -->
+    <polygon points="26,1 11,32 41,32" fill="#10b981"/>
+    <!-- Star -->
+    <circle cx="26" cy="1" r="3.5" fill="#6ee7b7" opacity="0.9"/>
+  </g>
+</svg>
