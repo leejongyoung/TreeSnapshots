@@ -1,0 +1,90 @@
+name: Build & Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            label: macos-arm
+
+          - os: macos-13
+            target: x86_64-apple-darwin
+            label: macos-intel
+
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            label: linux
+
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            label: windows
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: treesnap-gui/package-lock.json
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Cache Rust build
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: treesnap-gui/src-tauri
+
+      - name: Install Linux system dependencies
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf
+
+      - name: Install frontend dependencies
+        working-directory: treesnap-gui
+        run: npm install
+
+      - name: Build
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: treesnap-gui
+          tagName: ${{ github.ref_name }}
+          releaseName: TreeSnapshots ${{ github.ref_name }}
+          releaseBody: |
+            ## TreeSnapshots ${{ github.ref_name }}
+
+            ### Downloads
+            | Platform | File |
+            | :------- | :--- |
+            | macOS (Apple Silicon) | `*_aarch64.dmg` |
+            | macOS (Intel)         | `*_x64.dmg` |
+            | Linux                 | `*.deb` / `*.rpm` |
+            | Windows               | `*.exe` |
+
+            > **macOS:** If Gatekeeper blocks the app, right-click → Open to bypass.
+          releaseDraft: true
+          prerelease: false
+          args: --target ${{ matrix.target }}
