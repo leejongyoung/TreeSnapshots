@@ -14,8 +14,6 @@ if [ "$RUN_VIA_MAKE" != "true" ]; then
     exit 1
 fi
 
-REPO_ROOT=$(pwd)
-SNAPSHOT_DIR="${REPO_ROOT}/snapshots"
 DATE=$(date +%Y%m%d)
 START_TIME=$SECONDS
 OS_TYPE=$(uname)
@@ -24,6 +22,8 @@ if [[ "$OS_TYPE" == "Linux" ]] && grep -qE "(Microsoft|WSL)" /proc/version &> /d
     OS_TYPE="WSL"
 fi
 REAL_USER=${SUDO_USER:-$USER}
+REAL_HOME=$(eval echo "~${REAL_USER}")
+SNAPSHOT_DIR="${REAL_HOME}/TreeSnapshots/snapshots"
 
 # 2. Dependency Check
 check_and_install_tree() {
@@ -80,7 +80,7 @@ check_and_install_tree() {
 
 # 3. Initial Setup
 mkdir -p "$SNAPSHOT_DIR" # Create directory (as root)
-chown "$REAL_USER" "$SNAPSHOT_DIR" # Change ownership to the real user
+chown "$REAL_USER" "${REAL_HOME}/TreeSnapshots" "$SNAPSHOT_DIR" # Restore ownership to the real user
 check_and_install_tree
 
 # 4. Function to populate available drives into the global options array

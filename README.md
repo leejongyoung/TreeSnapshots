@@ -87,7 +87,7 @@ sudo make snapshot
 Once the script is finished, a new text file will be created in the `snapshots/` directory. Use Git to commit this file to your repository's history.
 
 ```bash
-git add snapshots/*.txt
+git add ~/TreeSnapshots/snapshots/*.txt
 git commit -m "feat: Add new snapshot for $(date +'%Y-%m-%d')"
 git push origin main
 ```
