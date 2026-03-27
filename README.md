@@ -48,13 +48,13 @@ This project is managed by a `Makefile` and powered by the `treesnap.sh` script.
 
 The script is tested and maintained for the following operating systems and versions.
 
-| Operating System            | Family         | Recommended Version      | Status          |
-| :-------------------------- | :------------- | :----------------------- | :-------------- |
-| **macOS**                   | `Darwin`       | Tahoe 26 or newer        | ✅ Verified     |
-| **Ubuntu**                  | `Debian-based` | 24.04 LTS or newer       | ✅ Verified     |
-| **Rocky Linux**             | `RHEL-based`   | Version 10 or newer      | ✅ Verified     |
-| **Fedora**                  | `RHEL-based`   | Version 43 or newer      | ✅ Verified     |
-| **Windows 10 / 11**         | `NT (WSL)`     | Latest                   | ✅ Verified     |
+| Operating System    | Family  | Recommended Version  | Status      |
+| :------------------ | :------ | :------------------- | :---------- |
+| **macOS**           | Darwin  | Tahoe 26 or newer    | ✅ Verified |
+| **Ubuntu**          | Debian  | 24.04 LTS or newer   | ✅ Verified |
+| **Rocky Linux**     | RHEL    | Version 10 or newer  | ✅ Verified |
+| **Fedora**          | RHEL    | Version 43 or newer  | ✅ Verified |
+| **Windows 10 / 11** | WSL     | Latest               | ✅ Verified |
 
 > **Note**: On Linux or WSL, the `tree` command is required. If not installed, the script will attempt to install it for you.
 
