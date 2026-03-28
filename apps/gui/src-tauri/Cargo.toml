@@ -1,6 +1,6 @@
 [package]
 name = "treesnapshots"
-version = "2.0.1"
+version = "2.0.3"
 description = "A desktop GUI for capturing and managing file system tree snapshots"
 authors = ["leejongyoung"]
 edition = "2024"

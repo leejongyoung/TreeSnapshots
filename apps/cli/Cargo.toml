@@ -1,6 +1,6 @@
 [package]
 name = "treesnapshots-cli"
-version = "2.0.1"
+version = "2.0.3"
 description = "CLI tool for capturing file system tree snapshots"
 authors = ["leejongyoung"]
 edition = "2024"
