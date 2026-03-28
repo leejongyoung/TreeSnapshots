@@ -8,7 +8,7 @@ license = "MIT"
 repository = "https://github.com/leejongyoung/TreeSnapshots"
 
 [[bin]]
-name = "treesnapshots"
+name = "treesnapshots-cli"
 path = "src/main.rs"
 
 [dependencies]

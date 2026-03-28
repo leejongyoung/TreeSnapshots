@@ -16,7 +16,7 @@ dev-cli:
 build-cli:
     cargo build --release -p treesnapshots-cli
 
-# Install CLI globally (~/.cargo/bin/treesnapshots)
+# Install CLI globally (~/.cargo/bin/treesnapshots-cli)
 install:
     cargo install --path apps/cli
 
