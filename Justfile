@@ -20,6 +20,14 @@ build-cli:
 install:
     cargo install --path apps/cli
 
+# Uninstall CLI from ~/.cargo/bin
+uninstall:
+    cargo uninstall treesnap
+
+# Clean build artifacts
+clean:
+    cargo clean
+
 # ── GUI ───────────────────────────────────────────────────────────────────────
 
 # Run GUI in development mode
