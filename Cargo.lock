@@ -4360,7 +4360,7 @@ dependencies = [
 
 [[package]]
 name = "treesnap-core"
-version = "2.0.0"
+version = "2.0.1"
 dependencies = [
  "chrono",
  "serde",
@@ -4368,7 +4368,7 @@ dependencies = [
 
 [[package]]
 name = "treesnapshots"
-version = "2.0.0"
+version = "2.0.1"
 dependencies = [
  "serde",
  "serde_json",
@@ -4380,7 +4380,7 @@ dependencies = [
 
 [[package]]
 name = "treesnapshots-cli"
-version = "2.0.0"
+version = "2.0.1"
 dependencies = [
  "console",
  "indicatif",
