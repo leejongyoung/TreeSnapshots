@@ -23,13 +23,13 @@ TreeSnapshots records your file system structure using `tree` and saves it as a 
 
 Download the latest release from [GitHub Releases](https://github.com/leejongyoung/TreeSnapshots/releases/latest).
 
-### CLI (`treesnapshots`)
+### CLI (`treesnapshots-cli`)
 
 | Platform | File |
 | :------- | :--- |
-| macOS (Universal) | `treesnapshots-macos-universal.tar.gz` |
-| Linux x86_64      | `treesnapshots-linux-x86_64.tar.gz` |
-| Windows x86_64    | `treesnapshots-windows-x86_64.zip` |
+| macOS (Universal) | `treesnapshots-cli-macos-universal.tar.gz` |
+| Linux x86_64      | `treesnapshots-cli-linux-x86_64.tar.gz` |
+| Windows x86_64    | `treesnapshots-cli-windows-x86_64.zip` |
 
 ### Desktop GUI
 
@@ -75,10 +75,12 @@ just              # show all available recipes
 just dev-cli      # run CLI in development mode
 just dev-gui      # run GUI in development mode (hot reload)
 
-just build-cli    # build CLI binary  → target/release/treesnapshots
-just build-gui    # build GUI app     → treesnap-gui/src-tauri/target/release/bundle/
+just build-cli    # build CLI binary  → target/release/treesnapshots-cli
+just build-gui    # build GUI app     → apps/gui/src-tauri/target/release/bundle/
 
-just install      # install treesnapshots CLI globally (~/.cargo/bin)
+just install      # install treesnapshots-cli globally (~/.cargo/bin)
+just uninstall    # uninstall treesnapshots-cli from ~/.cargo/bin
+just clean        # clean build artifacts
 ```
 
 ---
