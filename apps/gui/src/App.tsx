@@ -20,6 +20,7 @@ interface ScanProgress {
   lines: number;
   size_bytes: number;
   elapsed_secs: number;
+  recent_entry: string;
 }
 
 interface ScanResult {
@@ -68,7 +69,8 @@ export default function App() {
   const [treeInstalled, setTreeInstalled] = useState<boolean | null>(null);
   const [systemInfo, setSystemInfo] = useState<SystemInfo | null>(null);
   const [selectedDrive, setSelectedDrive] = useState<Drive | null>(null);
-  const [progress, setProgress] = useState<ScanProgress>({ lines: 0, size_bytes: 0, elapsed_secs: 0 });
+  const [progress, setProgress] = useState<ScanProgress>({ lines: 0, size_bytes: 0, elapsed_secs: 0, recent_entry: "" });
+  const [scanLog, setScanLog] = useState<string[]>([]);
   const [result, setResult] = useState<ScanResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showInstallDialog, setShowInstallDialog] = useState(false);
@@ -104,11 +106,16 @@ export default function App() {
   async function handleStartScan() {
     if (!selectedDrive) return;
     setScreen("scanning");
-    setProgress({ lines: 0, size_bytes: 0, elapsed_secs: 0 });
+    setProgress({ lines: 0, size_bytes: 0, elapsed_secs: 0, recent_entry: "" });
+    setScanLog([]);
     setError(null);
 
     unlistenRef.current = await listen<ScanProgress>("scan-progress", (e) => {
       setProgress(e.payload);
+      const entry = e.payload.recent_entry;
+      if (entry) {
+        setScanLog(prev => [...prev.slice(-7), entry]);
+      }
     });
 
     try {
@@ -128,11 +135,16 @@ export default function App() {
     setScreen("menu");
     setResult(null);
     setSelectedDrive(null);
-    setProgress({ lines: 0, size_bytes: 0, elapsed_secs: 0 });
+    setProgress({ lines: 0, size_bytes: 0, elapsed_secs: 0, recent_entry: "" });
+    setScanLog([]);
     setError(null);
   }
 
+  // fullHeight: content starts from top (no vertical centering) for list/form screens
   const fullHeight = screen === "menu" || screen === "select" || screen === "logs" || screen === "licenses";
+  // Header is always compact on non-menu screens — hides the large TreeIcon so it
+  // doesn't dominate the layout while scanning/complete content is centered below
+  const compactHeader = true;
 
   return (
     <div
@@ -147,7 +159,7 @@ export default function App() {
 
       {/* Main content */}
       <div className="flex-1 min-h-0 flex flex-col overflow-hidden px-6 pb-4">
-        {screen !== "menu" && <Header systemInfo={systemInfo} compact={fullHeight} />}
+        {screen !== "menu" && <Header systemInfo={systemInfo} compact={compactHeader} />}
 
         <div className={`flex-1 min-h-0 flex flex-col items-center w-full ${fullHeight ? "" : "justify-center"}`}>
         {screen === "menu" && (
@@ -171,7 +183,7 @@ export default function App() {
           />
         )}
         {screen === "scanning" && (
-          <ScanningScreen progress={progress} drivePath={selectedDrive?.path ?? ""} />
+          <ScanningScreen progress={progress} drivePath={selectedDrive?.path ?? ""} scanLog={scanLog} />
         )}
         {screen === "complete" && result && (
           <CompleteScreen result={result} onDone={goToMenu} />
@@ -417,7 +429,17 @@ function SelectScreen({
 
 // ── Scanning Screen ───────────────────────────────────────────────────────────
 
-function ScanningScreen({ progress, drivePath }: { progress: ScanProgress; drivePath: string }) {
+function ScanningScreen({ progress, drivePath, scanLog }: {
+  progress: ScanProgress;
+  drivePath: string;
+  scanLog: string[];
+}) {
+  const logEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    logEndRef.current?.scrollIntoView({ behavior: "instant" });
+  }, [scanLog]);
+
   return (
     <div className="w-full max-w-md text-center">
       <div className="flex justify-center gap-2 mb-6">
@@ -426,15 +448,37 @@ function ScanningScreen({ progress, drivePath }: { progress: ScanProgress; drive
         <span className="w-2.5 h-2.5 bg-emerald-500 dark:bg-emerald-400 rounded-full dot-3" />
       </div>
       <p className="text-emerald-600 dark:text-emerald-400 font-bold text-sm mb-1">Scanning</p>
-      <p className="text-slate-400 dark:text-slate-600 text-xs mb-8 truncate px-4">{drivePath}</p>
-      <div className="grid grid-cols-3 gap-3">
+      <p className="text-slate-400 dark:text-slate-600 text-xs mb-6 truncate px-4">{drivePath}</p>
+
+      <div className="grid grid-cols-3 gap-3 mb-5">
         <StatBox label="Lines" value={progress.lines.toLocaleString()} />
         <StatBox label="Size" value={formatBytes(progress.size_bytes)} />
         <StatBox label="Elapsed" value={formatDuration(progress.elapsed_secs)} />
       </div>
-      <p className="text-slate-200 dark:text-slate-800 text-xs mt-8 truncate px-4">
-        tree -apu -h {drivePath}
-      </p>
+
+      {/* Live entry log */}
+      <div className="rounded-lg bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 overflow-hidden">
+        <div className="h-32 overflow-y-auto px-3 py-2 space-y-0.5 text-left">
+          {scanLog.length === 0 ? (
+            <p className="text-slate-300 dark:text-slate-700 text-xs">Waiting...</p>
+          ) : (
+            scanLog.map((entry, i) => (
+              <p
+                key={i}
+                className={`text-xs truncate ${
+                  i === scanLog.length - 1
+                    ? "text-slate-600 dark:text-slate-400"
+                    : "text-slate-300 dark:text-slate-700"
+                }`}
+              >
+                <span className="text-slate-300 dark:text-slate-700 mr-1 select-none">└</span>
+                {entry}
+              </p>
+            ))
+          )}
+          <div ref={logEndRef} />
+        </div>
+      </div>
     </div>
   );
 }

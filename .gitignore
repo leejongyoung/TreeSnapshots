@@ -78,3 +78,4 @@ node_modules/
 
 # Project-specific ignores
 snapshots/*.txt
+target/

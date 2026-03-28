@@ -1,8 +1,8 @@
 <div align="center">
 
-#  TreeSnapshots 🌳
+# TreeSnapshots 🌳
 
-**A script-based tool for creating periodic snapshots of your file system structure.**
+**A tool for capturing and managing file system tree snapshots — available as a CLI and a native desktop GUI.**
 
 ![macOS](https://img.shields.io/badge/macOS-Tahoe%2026+-blue.svg?style=for-the-badge&logo=apple)
 ![Ubuntu](https://img.shields.io/badge/Ubuntu-24.04+-E95420?style=for-the-badge&logo=ubuntu&logoColor=white)
@@ -15,85 +15,87 @@
 
 ---
 
-This repository contains `TreeSnapshots`, a powerful script that automates the process of recording file system structures on **macOS**, **Linux**, and **Windows (via WSL)**. It uses Git to efficiently track changes over time.
-
-## 🚀 Quick Start
-
-To take a snapshot of your file system, clone this repository and use the `make` command.
-
-> **Note:** This command requires `sudo` to scan system directories and will prompt for your password.
-
-```bash
-git clone https://github.com/leejongyoung/TreeSnapshots.git
-cd TreeSnapshots
-sudo make snapshot
-```
+TreeSnapshots records your file system structure using `tree` and saves it as a plain-text snapshot. Both a **CLI binary** and a **native desktop GUI** are provided, sharing the same core logic built in Rust.
 
 ---
 
-## ✨ Core Features
+## 📦 Download
 
-This project is managed by a `Makefile` and powered by the `treesnap.sh` script. Key features include:
+Download the latest release from [GitHub Releases](https://github.com/leejongyoung/TreeSnapshots/releases/latest).
 
--   **✅ Simple Interface**: A clean `make snapshot` command is all you need to get started.
--   **🤖 Cross-Platform**: Works seamlessly on macOS, native Linux, and Windows via WSL.
--   **💾 Interactive Drive Selection**: Automatically lists system and external drives, including Windows drives (e.g., C:) under WSL.
--   **⏱️ Real-time Monitoring**: Displays live feedback on the number of lines processed and the size of the snapshot file.
--   **🔐 Automated Permissions**: Runs with `sudo` for full access, then restores ownership of the snapshot file to the original user.
--   **📈 Git-Friendly Format**: Saves snapshots as plain text, making it easy to track changes (`diff`) and keeping the repository lightweight.
+### CLI (`treesnap`)
+
+| Platform | File |
+| :------- | :--- |
+| macOS (Universal) | `treesnap-macos-universal.tar.gz` |
+| Linux x86_64      | `treesnap-linux-x86_64.tar.gz` |
+| Windows x86_64    | `treesnap-windows-x86_64.zip` |
+
+### Desktop GUI
+
+| Platform | File |
+| :------- | :--- |
+| macOS (Universal) | `TREESNAPSHOTS_*_universal.dmg` |
+| Linux             | `TREESNAPSHOTS_*.deb` / `*.rpm` |
+| Windows           | `TREESNAPSHOTS_*_x64-setup.exe` |
+
+> See [`treesnap-gui/README.md`](treesnap-gui/README.md) for GUI-specific documentation.
 
 ---
 
 ## 📋 Supported Operating Systems
 
-The script is tested and maintained for the following operating systems and versions.
+| Operating System    | Family | Recommended Version | CLI | GUI |
+| :------------------ | :----- | :------------------ | :-- | :-- |
+| **macOS**           | Darwin | Tahoe 26 or newer   | ✅ Verified   | ✅ Verified   |
+| **Ubuntu**          | Debian | 24.04 LTS or newer  | ✅ Verified   | ✅ Verified   |
+| **Rocky Linux**     | RHEL   | Version 10 or newer | ⚠️ Compatible | ⚠️ Compatible |
+| **Fedora**          | RHEL   | Version 43 or newer | ⚠️ Compatible | ⚠️ Compatible |
+| **Windows 10 / 11** | —      | Latest              | ✅ Verified   | ✅ Verified   |
 
-| Operating System    | Family  | Recommended Version  | Status      |
-| :------------------ | :------ | :------------------- | :---------- |
-| **macOS**           | Darwin  | Tahoe 26 or newer    | ✅ Verified |
-| **Ubuntu**          | Debian  | 24.04 LTS or newer   | ✅ Verified |
-| **Rocky Linux**     | RHEL    | Version 10 or newer  | ✅ Verified |
-| **Fedora**          | RHEL    | Version 43 or newer  | ✅ Verified |
-| **Windows 10 / 11** | WSL     | Latest               | ✅ Verified |
-
-> **Note**: On Linux or WSL, the `tree` command is required. If not installed, the script will attempt to install it for you.
+> ⚠️ **Compatible**: Built on Ubuntu x86_64. Binary and `.rpm` package are expected to work but not explicitly tested on this platform.
 
 ---
 
-## 💻 Windows Support (via WSL)
+## 🔧 Development
 
-This script runs on Windows thanks to the **Windows Subsystem for Linux (WSL)**. WSL allows you to run a genuine Linux environment directly on Windows, without the overhead of a traditional virtual machine.
+### Prerequisites
 
-### How to Use on Windows
+| Tool | Purpose | Install |
+| :--- | :------ | :------ |
+| **Rust** | CLI & GUI backend | [rustup.rs](https://rustup.rs) |
+| **Node.js** | GUI frontend | [nodejs.org](https://nodejs.org) |
+| **just** | Command runner | `brew install just` |
 
-1.  **Install WSL**: If you don't have it, install WSL with a Linux distribution like Ubuntu. Follow the [Official Microsoft Guide](https://learn.microsoft.com/en-us/windows/wsl/install).
-2.  **Open Your WSL Terminal**: Launch your Linux distribution (e.g., Ubuntu) from the Start Menu.
-3.  **Follow the Quick Start**: Inside the WSL terminal, follow the standard [Quick Start](#-quick-start) instructions. The script will automatically detect the WSL environment and show your Windows drives (C:, D:, etc.) as scanning options.
+### Commands
+
+```bash
+just              # show all available recipes
+
+just dev-cli      # run CLI in development mode
+just dev-gui      # run GUI in development mode (hot reload)
+
+just build-cli    # build CLI binary  → target/release/treesnap
+just build-gui    # build GUI app     → treesnap-gui/src-tauri/target/release/bundle/
+
+just install      # install treesnap CLI globally (~/.cargo/bin)
+```
 
 ---
 
-## 🛠 How It Works
+## 🏗 Project Structure
 
-Follow these steps to generate and save a snapshot.
-
-### 1. Run the Snapshot Command
-This will prompt you to select a drive to scan.
-
-```bash
-sudo make snapshot
+```
+TreeSnapshots/
+├── Justfile               # command runner
+├── crates/
+│   └── core/              # shared Rust library (scan, drives, logs, install)
+└── apps/
+    ├── cli/               # treesnap binary
+    └── gui/               # Tauri 2 + React desktop GUI
 ```
 
-### 2. Commit the Changes
-Once the script is finished, a new text file will be created in the `snapshots/` directory. Use Git to commit this file to your repository's history.
-
-```bash
-git add ~/TreeSnapshots/snapshots/*.txt
-git commit -m "feat: Add new snapshot for $(date +'%Y-%m-%d')"
-git push origin main
-```
-
-### 3. Review the History
-You can now check the `git log` or use `git diff` on the snapshot files to see what has changed between different points in time.
+The CLI and GUI share the same `treesnap-core` library, so behaviour is always consistent between both interfaces.
 
 ---
 

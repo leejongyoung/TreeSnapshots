@@ -6,13 +6,79 @@ on:
       - 'v*.*.*'
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
-  build:
+  # ── CLI Binary Builds ────────────────────────────────────────────────────────
+  build-cli:
     strategy:
       fail-fast: false
       matrix:
         include:
-          - os: macos-latest        # macOS Universal (ARM + Intel 통합)
+          - os: macos-latest
+            label: macos-universal
+
+          - os: ubuntu-latest
+            label: linux-x86_64
+
+          - os: windows-latest
+            label: windows-x86_64
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.os == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      - name: Cache Rust build
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: cli-${{ matrix.label }}
+
+      - name: Build (macOS Universal)
+        if: matrix.os == 'macos-latest'
+        run: |
+          cargo build --release --target aarch64-apple-darwin -p treesnap
+          cargo build --release --target x86_64-apple-darwin -p treesnap
+          lipo -create \
+            target/aarch64-apple-darwin/release/treesnap \
+            target/x86_64-apple-darwin/release/treesnap \
+            -output treesnap
+          tar -czf treesnap-macos-universal.tar.gz treesnap
+
+      - name: Build (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          cargo build --release -p treesnap
+          tar -czf treesnap-linux-x86_64.tar.gz -C target/release treesnap
+
+      - name: Build (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          cargo build --release -p treesnap
+          Compress-Archive -Path target\release\treesnap.exe -DestinationPath treesnap-windows-x86_64.zip
+
+      - name: Upload CLI binary to release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          draft: true
+          files: treesnap-*
+
+  # ── GUI App Builds ───────────────────────────────────────────────────────────
+  build-gui:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest        # macOS Universal (ARM + Intel)
             target: universal-apple-darwin
             label: macos-universal
 
@@ -35,7 +101,7 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: treesnap-gui/package-lock.json
+          cache-dependency-path: apps/gui/package-lock.json
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
@@ -45,7 +111,8 @@ jobs:
       - name: Cache Rust build
         uses: Swatinem/rust-cache@v2
         with:
-          workspaces: treesnap-gui/src-tauri
+          workspaces: apps/gui/src-tauri
+          key: gui-${{ matrix.label }}
 
       - name: Install Linux system dependencies
         if: matrix.os == 'ubuntu-latest'
@@ -58,29 +125,43 @@ jobs:
             patchelf
 
       - name: Install frontend dependencies
-        working-directory: treesnap-gui
+        working-directory: apps/gui
         run: npm install
 
-      - name: Build
+      - name: Build GUI
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          projectPath: treesnap-gui
-          tagName: ${{ github.ref_name }}
+          projectPath: apps/gui
+          tagName: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || '' }}
           releaseName: TreeSnapshots ${{ github.ref_name }}
           releaseBody: |
             ## TreeSnapshots ${{ github.ref_name }}
 
-            ### Downloads
+            ### GUI App
             | Platform | File |
             | :------- | :--- |
-            | macOS (Universal) | `*_universal.dmg` |
-            | Linux             | `*.deb` / `*.rpm` |
-            | Windows           | `*.exe` |
+            | macOS (Universal)          | `TREESNAPSHOTS_*_universal.dmg` |
+            | Linux — Ubuntu / Debian    | `TREESNAPSHOTS_*.deb` |
+            | Linux — Rocky Linux / Fedora | `TREESNAPSHOTS_*.rpm` |
+            | Windows                    | `TREESNAPSHOTS_*_x64-setup.exe` |
+
+            ### CLI (`treesnap`)
+            | Platform | File |
+            | :------- | :--- |
+            | macOS (Universal)             | `treesnap-macos-universal.tar.gz` |
+            | Linux x86_64 (Ubuntu / Debian / Rocky / Fedora) | `treesnap-linux-x86_64.tar.gz` |
+            | Windows x86_64                | `treesnap-windows-x86_64.zip` |
+
+            ```bash
+            # macOS / Linux — quick install
+            curl -L https://github.com/leejongyoung/TreeSnapshots/releases/download/${{ github.ref_name }}/treesnap-macos-universal.tar.gz | tar xz
+            sudo mv treesnap /usr/local/bin/
+            ```
 
             > **macOS:** Universal 빌드로 Apple Silicon과 Intel 모두 지원합니다.
-            > Gatekeeper에서 차단될 경우 우클릭 → 열기로 실행하세요.
+            > **Rocky Linux / Fedora:** Ubuntu에서 빌드된 바이너리로 호환 가능하나 별도 검증되지 않았습니다.
           releaseDraft: true
           prerelease: false
           args: --target ${{ matrix.target }}
