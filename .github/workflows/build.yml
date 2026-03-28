@@ -44,25 +44,25 @@ jobs:
       - name: Build (macOS Universal)
         if: matrix.os == 'macos-latest'
         run: |
-          cargo build --release --target aarch64-apple-darwin -p treesnap
-          cargo build --release --target x86_64-apple-darwin -p treesnap
+          cargo build --release --target aarch64-apple-darwin -p treesnapshots-cli
+          cargo build --release --target x86_64-apple-darwin -p treesnapshots-cli
           lipo -create \
-            target/aarch64-apple-darwin/release/treesnap \
-            target/x86_64-apple-darwin/release/treesnap \
-            -output treesnap
-          tar -czf treesnap-macos-universal.tar.gz treesnap
+            target/aarch64-apple-darwin/release/treesnapshots \
+            target/x86_64-apple-darwin/release/treesnapshots \
+            -output treesnapshots
+          tar -czf treesnapshots-macos-universal.tar.gz treesnapshots
 
       - name: Build (Linux)
         if: matrix.os == 'ubuntu-latest'
         run: |
-          cargo build --release -p treesnap
-          tar -czf treesnap-linux-x86_64.tar.gz -C target/release treesnap
+          cargo build --release -p treesnapshots-cli
+          tar -czf treesnapshots-linux-x86_64.tar.gz -C target/release treesnapshots
 
       - name: Build (Windows)
         if: matrix.os == 'windows-latest'
         run: |
-          cargo build --release -p treesnap
-          Compress-Archive -Path target\release\treesnap.exe -DestinationPath treesnap-windows-x86_64.zip
+          cargo build --release -p treesnapshots-cli
+          Compress-Archive -Path target\release\treesnapshots.exe -DestinationPath treesnapshots-windows-x86_64.zip
 
       - name: Upload CLI binary to release
         if: startsWith(github.ref, 'refs/tags/')
@@ -70,7 +70,7 @@ jobs:
         with:
           tag_name: ${{ github.ref_name }}
           draft: true
-          files: treesnap-*
+          files: treesnapshots-*
 
   # ── GUI App Builds ───────────────────────────────────────────────────────────
   build-gui:
@@ -147,17 +147,17 @@ jobs:
             | Linux — Rocky Linux / Fedora | `TREESNAPSHOTS_*.rpm` |
             | Windows                    | `TREESNAPSHOTS_*_x64-setup.exe` |
 
-            ### CLI (`treesnap`)
+            ### CLI (`treesnapshots`)
             | Platform | File |
             | :------- | :--- |
-            | macOS (Universal)             | `treesnap-macos-universal.tar.gz` |
-            | Linux x86_64 (Ubuntu / Debian / Rocky / Fedora) | `treesnap-linux-x86_64.tar.gz` |
-            | Windows x86_64                | `treesnap-windows-x86_64.zip` |
+            | macOS (Universal)             | `treesnapshots-macos-universal.tar.gz` |
+            | Linux x86_64 (Ubuntu / Debian / Rocky / Fedora) | `treesnapshots-linux-x86_64.tar.gz` |
+            | Windows x86_64                | `treesnapshots-windows-x86_64.zip` |
 
             ```bash
             # macOS / Linux — quick install
-            curl -L https://github.com/leejongyoung/TreeSnapshots/releases/download/${{ github.ref_name }}/treesnap-macos-universal.tar.gz | tar xz
-            sudo mv treesnap /usr/local/bin/
+            curl -L https://github.com/leejongyoung/TreeSnapshots/releases/download/${{ github.ref_name }}/treesnapshots-macos-universal.tar.gz | tar xz
+            sudo mv treesnapshots /usr/local/bin/
             ```
 
             > **macOS:** Universal 빌드로 Apple Silicon과 Intel 모두 지원합니다.

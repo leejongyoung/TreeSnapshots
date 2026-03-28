@@ -13,7 +13,7 @@ use treesnap_core::{
 fn main() {
     // ── Version ───────────────────────────────────────────────────────────────
     if std::env::args().any(|a| a == "--version" || a == "-V") {
-        println!("treesnap {}", env!("CARGO_PKG_VERSION"));
+        println!("treesnapshots {}", env!("CARGO_PKG_VERSION"));
         return;
     }
 
@@ -193,7 +193,7 @@ fn main() {
             println!("    {}", style(paths_hint).dim());
             println!(
                 "    Run {} for a full system scan.",
-                style("sudo treesnap").cyan()
+                style("sudo treesnapshots").cyan()
             );
         }
     }
@@ -243,7 +243,7 @@ fn main() {
                     println!(
                         "  {} Run {} for a complete scan.",
                         style("💡").dim(),
-                        style("sudo treesnap").cyan()
+                        style("sudo treesnapshots").cyan()
                     );
                 }
             }

@@ -10,19 +10,19 @@ default:
 
 # Run CLI in development mode
 dev-cli:
-    cargo run -p treesnap
+    cargo run -p treesnapshots-cli
 
 # Build CLI for production
 build-cli:
-    cargo build --release -p treesnap
+    cargo build --release -p treesnapshots-cli
 
-# Install CLI globally (~/.cargo/bin/treesnap)
+# Install CLI globally (~/.cargo/bin/treesnapshots)
 install:
     cargo install --path apps/cli
 
 # Uninstall CLI from ~/.cargo/bin
 uninstall:
-    cargo uninstall treesnap
+    cargo uninstall treesnapshots-cli
 
 # Clean build artifacts
 clean:

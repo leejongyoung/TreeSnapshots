@@ -23,13 +23,13 @@ TreeSnapshots records your file system structure using `tree` and saves it as a 
 
 Download the latest release from [GitHub Releases](https://github.com/leejongyoung/TreeSnapshots/releases/latest).
 
-### CLI (`treesnap`)
+### CLI (`treesnapshots`)
 
 | Platform | File |
 | :------- | :--- |
-| macOS (Universal) | `treesnap-macos-universal.tar.gz` |
-| Linux x86_64      | `treesnap-linux-x86_64.tar.gz` |
-| Windows x86_64    | `treesnap-windows-x86_64.zip` |
+| macOS (Universal) | `treesnapshots-macos-universal.tar.gz` |
+| Linux x86_64      | `treesnapshots-linux-x86_64.tar.gz` |
+| Windows x86_64    | `treesnapshots-windows-x86_64.zip` |
 
 ### Desktop GUI
 
@@ -75,10 +75,10 @@ just              # show all available recipes
 just dev-cli      # run CLI in development mode
 just dev-gui      # run GUI in development mode (hot reload)
 
-just build-cli    # build CLI binary  → target/release/treesnap
+just build-cli    # build CLI binary  → target/release/treesnapshots
 just build-gui    # build GUI app     → treesnap-gui/src-tauri/target/release/bundle/
 
-just install      # install treesnap CLI globally (~/.cargo/bin)
+just install      # install treesnapshots CLI globally (~/.cargo/bin)
 ```
 
 ---
@@ -91,7 +91,7 @@ TreeSnapshots/
 ├── crates/
 │   └── core/              # shared Rust library (scan, drives, logs, install)
 └── apps/
-    ├── cli/               # treesnap binary
+    ├── cli/               # treesnapshots binary
     └── gui/               # Tauri 2 + React desktop GUI
 ```
 

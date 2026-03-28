@@ -1,5 +1,5 @@
 [package]
-name = "treesnap"
+name = "treesnapshots-cli"
 version = "2.0.0"
 description = "CLI tool for capturing file system tree snapshots"
 authors = ["leejongyoung"]
@@ -8,7 +8,7 @@ license = "MIT"
 repository = "https://github.com/leejongyoung/TreeSnapshots"
 
 [[bin]]
-name = "treesnap"
+name = "treesnapshots"
 path = "src/main.rs"
 
 [dependencies]
