@@ -23,6 +23,13 @@ TreeSnapshots records your file system structure using `tree` and saves it as a 
 
 Download the latest release from [GitHub Releases](https://github.com/leejongyoung/TreeSnapshots/releases/latest).
 
+### Homebrew (macOS / Linux)
+
+```bash
+brew install leejongyoung/cask/treesnapshots-cli      # CLI (macOS & Linux)
+brew install --cask leejongyoung/cask/treesnapshots    # GUI (macOS only)
+```
+
 ### CLI (`treesnapshots-cli`)
 
 | Platform | File |
